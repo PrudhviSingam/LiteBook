@@ -1,6 +1,12 @@
-from typing import List, Union
+from typing import Annotated, List, Union
 from pydantic import AnyHttpUrl, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+try:
+    from pydantic_settings import NoDecode
+except ImportError:
+    class NoDecode:
+        pass
 from pathlib import Path
 import json
 
@@ -14,8 +20,8 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 
-    # CORS origins
-    BACKEND_CORS_ORIGINS: List[str] = [
+    # CORS origins: Annotated with NoDecode to prevent pydantic-settings from crashing on comma-separated or unquoted strings
+    BACKEND_CORS_ORIGINS: Annotated[Union[str, List[str]], NoDecode] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:3000",
@@ -26,13 +32,20 @@ class Settings(BaseSettings):
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, str):
-            if v.startswith("["):
+            v = v.strip()
+            if not v:
+                return []
+            if v.startswith("[") and v.endswith("]"):
                 try:
-                    return json.loads(v)
+                    parsed = json.loads(v)
+                    if isinstance(parsed, list):
+                        return [str(i).strip().rstrip("/") for i in parsed if str(i).strip()]
                 except Exception:
                     pass
-            return [i.strip() for i in v.split(",") if i.strip()]
-        return v
+            return [i.strip().rstrip("/") for i in v.split(",") if i.strip()]
+        if isinstance(v, (list, tuple, set)):
+            return [str(i).strip().rstrip("/") for i in v if str(i).strip()]
+        return []
 
     # Database
     DATABASE_URL: str = "sqlite:///./finance_ai.db"
