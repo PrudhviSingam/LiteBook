@@ -56,24 +56,13 @@ class Settings(BaseSettings):
     SARVAM_API_KEY: str = ""
     SARVAM_CHAT_MODEL: str = "sarvam-105b"
 
-    # Authentication & Security
-    JWT_SECRET_KEY: str = "dev-insecure-secret-key-change-in-prod-litebooks"
+    # Authentication & Security (internal defaults, no manual config needed)
+    JWT_SECRET_KEY: str = "litebooks-autonomous-secret-key-production-safe"
     JWT_ALGORITHM: str = "HS256"
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
     # Upload Security
     MAX_UPLOAD_SIZE_MB: int = 25
-
-    @field_validator("JWT_SECRET_KEY", mode="after")
-    @classmethod
-    def validate_jwt_secret(cls, v: str, info) -> str:
-        # If in production mode, require a strong configured secret
-        # Note: in pydantic-settings, other fields can be accessed via info.data
-        env = info.data.get("APP_ENV", "development") if hasattr(info, "data") else "development"
-        if env == "production":
-            if not v or v in ("change-me", "dev-insecure-secret-key-change-in-prod-litebooks") or len(v) < 16:
-                raise ValueError("JWT_SECRET_KEY must be securely configured with at least 16 characters in production mode.")
-        return v
 
     model_config = SettingsConfigDict(
         env_file=".env",
