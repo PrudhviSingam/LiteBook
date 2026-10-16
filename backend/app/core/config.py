@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     API_V1_STR: str = "/api/v1"
 
-    HOST: str = "127.0.0.1"
+    HOST: str = "0.0.0.0"
     PORT: int = 8000
 
     # CORS origins
@@ -19,6 +19,7 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:3000",
+        "https://litebooksingam.netlify.app",
     ]
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
@@ -35,6 +36,13 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str = "sqlite:///./finance_ai.db"
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def assemble_database_url(cls, v: str) -> str:
+        if isinstance(v, str) and v.startswith("postgres://"):
+            return v.replace("postgres://", "postgresql://", 1)
+        return v
 
     # Storage
     STORAGE_DIR: str = "./storage"

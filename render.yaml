@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: litebooks-backend
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: HOST
+        value: 0.0.0.0
+      - key: BACKEND_CORS_ORIGINS
+        value: https://litebooksingam.netlify.app,http://localhost:5173
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        value: sqlite:///./finance_ai.db
+      - key: STORAGE_DIR
+        value: ./storage
+      - key: AI_PROVIDER
+        value: mock
+      - key: PYTHON_VERSION
+        value: 3.11.9
