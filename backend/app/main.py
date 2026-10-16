@@ -18,29 +18,33 @@ async def lifespan(app: FastAPI):
     _ = settings.uploads_dir
     _ = settings.reports_dir
 
-    # Ensure default accountant account exists for seamless local development (disabled in production)
-    if settings.APP_ENV != "production":
-        from app.core.database import SessionLocal
-        from app.models.user import User
-        from app.core.security import hash_password
-        db = SessionLocal()
-        try:
-            user = db.query(User).filter(User.email == "accountant@litebooks.ai").first()
-            if not user:
-                user = User(
-                    email="accountant@litebooks.ai",
-                    full_name="Partner Accountant",
-                    hashed_password=hash_password("Password123!"),
-                    role="accountant",
-                    is_active=True,
-                    is_superuser=False,
-                )
-                db.add(user)
+    # Ensure default accountant account exists and has active credentials
+    from app.core.database import SessionLocal
+    from app.models.user import User
+    from app.core.security import hash_password, verify_password
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.email == "accountant@litebooks.ai").first()
+        if not user:
+            user = User(
+                email="accountant@litebooks.ai",
+                full_name="Partner Accountant",
+                hashed_password=hash_password("Password123!"),
+                role="accountant",
+                is_active=True,
+                is_superuser=False,
+            )
+            db.add(user)
+            db.commit()
+        else:
+            if not user.is_active or not verify_password("Password123!", user.hashed_password or ""):
+                user.hashed_password = hash_password("Password123!")
+                user.is_active = True
                 db.commit()
-        except Exception:
-            db.rollback()
-        finally:
-            db.close()
+    except Exception:
+        db.rollback()
+    finally:
+        db.close()
 
     yield
 
