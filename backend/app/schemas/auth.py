@@ -1,9 +1,9 @@
 from typing import Optional
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class UserRegisterRequest(BaseModel):
-    email: EmailStr
+    email: str = Field(..., min_length=3, description="User email address")
     password: str = Field(..., min_length=6, description="User password (minimum 6 characters)")
     full_name: str = Field(..., min_length=1, description="Full name of accountant or user")
     username: Optional[str] = None
@@ -25,7 +25,7 @@ class UserResponse(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str = Field(..., min_length=3, description="User email address")
     password: str
 
 
